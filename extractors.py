@@ -38,12 +38,38 @@ def detect_platform(url):
     """Detect the e-commerce platform based on the URL"""
     domain = urlparse(url).netloc.lower()
     
+    # First check based on domain
     if 'salla.sa' in domain or 'salla.com' in domain:
         return 'salla'
     elif 'zid.store' in domain or 'zid.sa' in domain:
         return 'zid'
-    else:
-        return None
+    
+    # If domain check fails, try to fetch the page and check for platform-specific patterns
+    try:
+        headers = {
+            'User-Agent': get_random_user_agent(),
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        }
+        response = requests.get(url, headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            html_content = response.text
+            
+            # Check for Zid-specific patterns
+            if 'zid.store' in html_content or 'zid.sa' in html_content or 'zidapi' in html_content or 'window.Zid' in html_content:
+                logger.info(f"Detected Zid platform for custom domain: {domain}")
+                return 'zid'
+                
+            # Check for Salla-specific patterns
+            if 'salla.sa' in html_content or 'salla.com' in html_content or 'window.Salla' in html_content:
+                logger.info(f"Detected Salla platform for custom domain: {domain}")
+                return 'salla'
+    
+    except Exception as e:
+        logger.warning(f"Error checking platform for {url}: {str(e)}")
+    
+    # If all checks fail, return None
+    return None
 
 def arabic_to_english_numerals(text):
     """Convert Arabic numerals to English numerals"""
