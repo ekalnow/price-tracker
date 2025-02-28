@@ -34,7 +34,17 @@ try:
     
     # Import the Flask app and database models
     logger.info("Importing Flask app and models")
-    from app import app
+    
+    # First try to import the serverless version of the app
+    try:
+        # Import the serverless version of the Flask app
+        from api.app_serverless import app
+        logger.info("Successfully imported serverless app version")
+    except ImportError:
+        # Fall back to the regular app if serverless version is not available
+        logger.warning("Serverless app version not found, falling back to regular app")
+        from app import app
+    
     from models import db, User, Product, PriceHistory, URL
     
     def init_database():

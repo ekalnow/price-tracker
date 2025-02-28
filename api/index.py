@@ -22,8 +22,15 @@ try:
     
     logger.info("Starting Vercel serverless function")
     
-    # Import the Flask app
-    from app import app
+    # First try to import the serverless version of the app
+    try:
+        # Import the serverless version of the Flask app
+        from api.app_serverless import app
+        logger.info("Successfully imported serverless app version")
+    except ImportError:
+        # Fall back to the regular app if serverless version is not available
+        logger.warning("Serverless app version not found, falling back to regular app")
+        from app import app
     
     # Vercel needs the app to be named 'app'
     app.config.update(
@@ -42,7 +49,7 @@ try:
     
     # Disable scheduler in serverless environment
     # For Vercel, you would use a separate service for scheduled tasks
-    if hasattr(app, 'apscheduler'):
+    if hasattr(app, 'apscheduler') and app.apscheduler is not None:
         app.apscheduler.shutdown()
         
     logger.info("Flask app initialized successfully")
