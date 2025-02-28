@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 def update_product_price(url_id):
     """Update price for a single product URL"""
-    from models import db, URL, PriceHistory
+    from models import db, URL, PriceHistory, Product
     from extractors import get_product_info
     
     try:
@@ -37,8 +37,40 @@ def update_product_price(url_id):
             product = url_obj.product
             
             if not product:
-                logger.error(f"Product not found for URL ID {url_id}")
-                return False
+                # Create a new product if one doesn't exist
+                logger.info(f"Creating new product for URL ID {url_id}")
+                product = Product(
+                    name=product_data.get('name', 'Unknown Product'),
+                    current_price=product_data['price'],
+                    currency=product_data.get('currency', 'SAR'),
+                    image_url=product_data.get('image_url', ''),
+                    description=product_data.get('description', ''),
+                    availability=product_data.get('availability', 'unknown')
+                )
+                db.session.add(product)
+                db.session.commit()  # Commit to get the product ID
+                
+                # Link the product to the URL
+                # Get a fresh copy of the URL object to avoid stale data
+                url_obj = URL.query.get(url_id)
+                url_obj.product_id = product.id
+                db.session.commit()
+                
+                # Verify the link was set
+                logger.info(f"Set URL {url_id} product_id to {product.id}")
+                url_check = URL.query.get(url_id)
+                logger.info(f"URL {url_id} product_id is now: {url_check.product_id}")
+                
+                # Create initial price history entry
+                price_history = PriceHistory(
+                    product_id=product.id,
+                    price=product_data['price']
+                )
+                db.session.add(price_history)
+                db.session.commit()
+                
+                logger.info(f"Created new product: {product.name} with price {product.current_price}")
+                return True
                 
             # Check if price has changed
             old_price = product.current_price

@@ -41,6 +41,7 @@ The scraper supports extracting product information from any website built with 
   - JSON-LD structured data
   - HTML elements
 - **Fallback Mechanisms**: If one extraction method fails, the system automatically tries alternatives.
+- **Product-Specific URLs**: For best results, always use product detail page URLs rather than homepage or category URLs. This ensures accurate price tracking and product information extraction.
 
 ### Testing the Scraper
 
@@ -50,17 +51,19 @@ You can test the scraper with any product URL using the included test script:
 python test_extractor.py <product_url>
 ```
 
-Example:
+For example:
 ```bash
-python test_extractor.py https://example-store.com/products/item123
+python test_extractor.py https://sauditissues.com/products/saudi-tissues-500-sheets
 ```
 
-The script will extract and display the product information including:
-- Platform used (Salla or Zid)
-- Product name
-- Price and currency
-- Store name
-- Other available product details
+### Troubleshooting
+
+If you encounter issues with product tracking:
+
+1. **URL Validity**: Ensure you're using a direct product URL, not a category or homepage URL
+2. **Platform Support**: Verify the store is built with either Salla or Zid
+3. **Product Creation**: If you see "Product not found" errors, try removing and re-adding the URL
+4. **Database Relationships**: The system automatically creates product records when URLs are added
 
 ## Usage
 

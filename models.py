@@ -33,6 +33,7 @@ class URL(db.Model):
     product_id = db.Column(db.Integer, db.ForeignKey('product.id'))
     
     user = db.relationship('User', backref=db.backref('urls', lazy=True))
+    product = db.relationship('Product', backref=db.backref('urls', lazy=True))
     
     def __repr__(self):
         return f'<URL {self.url}>'
@@ -48,7 +49,6 @@ class Product(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    urls = db.relationship('URL', backref=db.backref('product', lazy=True))
     price_history = db.relationship('PriceHistory', backref=db.backref('product', lazy=True), 
                                    order_by="desc(PriceHistory.timestamp)")
     
