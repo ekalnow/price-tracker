@@ -31,10 +31,36 @@ A web application that monitors competitor pricing across Salla and Zid e-commer
    flask db upgrade
    ```
 
-5. Run the application:
-   ```
-   flask run
-   ```
+## Scraping Functionality
+
+The scraper supports extracting product information from any website built with Salla or Zid platforms, regardless of the domain. The functionality includes:
+
+- **Robust Platform Detection**: The system can identify Salla and Zid powered websites based on page content rather than just domain names.
+- **Enhanced Extraction**: Multiple extraction methods are used to reliably get product information:
+  - Meta tags
+  - JSON-LD structured data
+  - HTML elements
+- **Fallback Mechanisms**: If one extraction method fails, the system automatically tries alternatives.
+
+### Testing the Scraper
+
+You can test the scraper with any product URL using the included test script:
+
+```bash
+python test_extractor.py <product_url>
+```
+
+Example:
+```bash
+python test_extractor.py https://example-store.com/products/item123
+```
+
+The script will extract and display the product information including:
+- Platform used (Salla or Zid)
+- Product name
+- Price and currency
+- Store name
+- Other available product details
 
 ## Usage
 
@@ -50,3 +76,8 @@ A web application that monitors competitor pricing across Salla and Zid e-commer
 - Async processing for batch URL processing
 - Implements Arabic numeral conversion
 - Handles rate limiting and proxy rotation
+
+5. Run the application:
+   ```
+   flask run
+   ```
