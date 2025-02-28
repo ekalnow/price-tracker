@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mt-5">
+    <div class="col-lg-6 mx-auto text-center">
+        <h1 class="display-4">E-commerce Price Monitor</h1>
+        <p class="lead">Track competitor product prices across Salla and Zid platforms</p>
+        
+        <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-4">
+            <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg px-4 me-md-2">Login</a>
+            <a href="{{ url_for('register') }}" class="btn btn-outline-secondary btn-lg px-4">Register</a>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-4">
+        <div class="card mb-4 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-link-45deg fs-1 text-primary"></i>
+                <h3 class="card-title mt-3">URL Management</h3>
+                <p class="card-text">Add product URLs from Salla and Zid platforms to track their prices over time.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card mb-4 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-graph-up-arrow fs-1 text-primary"></i>
+                <h3 class="card-title mt-3">Price Tracking</h3>
+                <p class="card-text">Monitor price changes with automated checks and visualize historical data.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card mb-4 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-bell fs-1 text-primary"></i>
+                <h3 class="card-title mt-3">Price Alerts</h3>
+                <p class="card-text">Set up alerts to notify you when prices drop below or rise above specific thresholds.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

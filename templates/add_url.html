@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block title %}Add URL - E-commerce Price Monitor{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Add Product URL</h4>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{{ url_for('add_url') }}" id="url-form">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ form.url.label(class="form-label") }}
+                        {{ form.url(class="form-control", placeholder="https://example.salla.sa/products/product-name") }}
+                        {% for error in form.url.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                        <div class="form-text">Enter a product URL from Salla or Zid platforms</div>
+                    </div>
+                    <div id="url-validation-result" class="mb-3 d-none">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title" id="product-name"></h5>
+                                <p class="card-text">
+                                    <strong>Price:</strong> <span id="product-price"></span> <span id="product-currency"></span><br>
+                                    <strong>Platform:</strong> <span id="product-platform"></span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('urls') }}" class="btn btn-outline-secondary">Back to URL List</a>
+                        <div>
+                            <button type="button" id="validate-url" class="btn btn-outline-primary me-2">
+                                <i class="bi bi-check-circle"></i> Validate URL
+                            </button>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const validateButton = document.getElementById('validate-url');
+        const urlInput = document.getElementById('url');
+        const validationResult = document.getElementById('url-validation-result');
+        const productName = document.getElementById('product-name');
+        const productPrice = document.getElementById('product-price');
+        const productCurrency = document.getElementById('product-currency');
+        const productPlatform = document.getElementById('product-platform');
+        
+        validateButton.addEventListener('click', function() {
+            const url = urlInput.value.trim();
+            if (!url) {
+                alert('Please enter a URL');
+                return;
+            }
+            
+            // Show loading state
+            validateButton.disabled = true;
+            validateButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Validating...';
+            
+            // Send validation request
+            fetch('{{ url_for("validate_url") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ url: url })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Reset button state
+                validateButton.disabled = false;
+                validateButton.innerHTML = '<i class="bi bi-check-circle"></i> Validate URL';
+                
+                if (data.valid) {
+                    // Show product info
+                    productName.textContent = data.name;
+                    productPrice.textContent = data.price;
+                    productCurrency.textContent = data.currency;
+                    productPlatform.textContent = data.platform.charAt(0).toUpperCase() + data.platform.slice(1);
+                    
+                    validationResult.classList.remove('d-none');
+                    validationResult.classList.add('border-success');
+                } else {
+                    // Show error
+                    alert('Validation failed: ' + data.message);
+                    validationResult.classList.add('d-none');
+                }
+            })
+            .catch(error => {
+                // Reset button state
+                validateButton.disabled = false;
+                validateButton.innerHTML = '<i class="bi bi-check-circle"></i> Validate URL';
+                
+                alert('Error validating URL: ' + error);
+                validationResult.classList.add('d-none');
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,24 @@
+name: Update Product Prices
+
+on:
+  schedule:
+    # Run every 12 hours
+    - cron: '0 */12 * * *'
+  workflow_dispatch:
+    # Allow manual triggering
+
+jobs:
+  update-prices:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Update Product Prices
+        env:
+          API_KEY: ${{ secrets.API_KEY }}
+          APP_URL: ${{ secrets.APP_URL }}
+        run: |
+          # Call the API endpoint to update prices
+          curl -X POST \
+            -H "Content-Type: application/json" \
+            -H "X-API-Key: $API_KEY" \
+            "$APP_URL/api/update-prices"

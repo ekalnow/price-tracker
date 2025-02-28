@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - E-commerce Price Monitor{% endblock %}
+
+{% block extra_css %}
+<style>
+    .price-up {
+        color: #dc3545;
+    }
+    .price-down {
+        color: #198754;
+    }
+    .platform-badge-salla {
+        background-color: #6f42c1;
+    }
+    .platform-badge-zid {
+        background-color: #20c997;
+    }
+    .chart-container {
+        height: 200px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Product Dashboard</h1>
+    <div class="d-flex">
+        <form action="{{ url_for('update_prices') }}" method="post" class="me-2">
+            <button type="submit" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-repeat"></i> Update Prices
+            </button>
+        </form>
+        <a href="{{ url_for('export_data') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-download"></i> Export Data
+        </a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Filter Products</h5>
+            </div>
+            <div class="card-body">
+                <form method="get" action="{{ url_for('dashboard') }}" class="row g-3">
+                    <div class="col-md-3">
+                        {{ form.platform.label(class="form-label") }}
+                        {{ form.platform(class="form-select") }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.price_min.label(class="form-label") }}
+                        {{ form.price_min(class="form-control") }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.price_max.label(class="form-label") }}
+                        {{ form.price_max(class="form-control") }}
+                    </div>
+                    <div class="col-md-3">
+                        {{ form.sort_by.label(class="form-label") }}
+                        {{ form.sort_by(class="form-select") }}
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        {{ form.submit(class="btn btn-primary w-100") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if products %}
+<div class="row">
+    {% for product in products %}
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                {% for url in product.urls %}
+                {% if url.platform == 'salla' %}
+                <span class="badge platform-badge-salla">Salla</span>
+                {% elif url.platform == 'zid' %}
+                <span class="badge platform-badge-zid">Zid</span>
+                {% endif %}
+                {% endfor %}
+                <small class="text-muted">Updated: {{ product.updated_at.strftime('%Y-%m-%d %H:%M') }}</small>
+            </div>
+            <div class="card-body">
+                <div class="d-flex mb-3">
+                    {% if product.image_url %}
+                    <img src="{{ product.image_url }}" alt="{{ product.name }}" class="img-thumbnail me-3" style="width: 80px; height: 80px; object-fit: contain;">
+                    {% else %}
+                    <div class="bg-light d-flex align-items-center justify-content-center me-3" style="width: 80px; height: 80px;">
+                        <i class="bi bi-image text-muted fs-1"></i>
+                    </div>
+                    {% endif %}
+                    <div>
+                        <h5 class="card-title">{{ product.name }}</h5>
+                        <h6 class="card-subtitle mb-2">
+                            <span class="fw-bold">{{ product.current_price }} {{ product.currency }}</span>
+                            {% if product.last_price_change %}
+                            {% if product.last_price_change > 0 %}
+                            <span class="price-up ms-2">
+                                <i class="bi bi-arrow-up-right"></i> {{ '%.2f'|format(product.last_price_change) }}%
+                            </span>
+                            {% else %}
+                            <span class="price-down ms-2">
+                                <i class="bi bi-arrow-down-right"></i> {{ '%.2f'|format(product.last_price_change|abs) }}%
+                            </span>
+                            {% endif %}
+                            {% endif %}
+                        </h6>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="chart-{{ product.id }}"></canvas>
+                </div>
+            </div>
+            <div class="card-footer bg-white">
+                <a href="{{ url_for('product_detail', product_id=product.id) }}" class="btn btn-sm btn-outline-primary w-100">
+                    <i class="bi bi-eye"></i> View Details
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-info">
+    <h4 class="alert-heading">No products yet!</h4>
+    <p>Start tracking product prices by adding URLs from the <a href="{{ url_for('urls') }}">Manage URLs</a> page.</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Price history charts
+    const priceHistory = {{ price_history|safe }};
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        for (const productId in priceHistory) {
+            const canvas = document.getElementById(`chart-${productId}`);
+            if (!canvas) continue;
+            
+            const ctx = canvas.getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: priceHistory[productId].dates,
+                    datasets: [{
+                        label: 'Price',
+                        data: priceHistory[productId].prices,
+                        borderColor: '#0d6efd',
+                        backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                        tension: 0.1,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Price: ${context.raw}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: false
+                        },
+                        y: {
+                            beginAtZero: false
+                        }
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}
