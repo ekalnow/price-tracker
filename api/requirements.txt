@@ -12,3 +12,8 @@ python-dotenv==1.0.0
 werkzeug==2.3.7
 email_validator==2.2.0
 psycopg2-binary==2.9.9
+APScheduler==3.10.4
+pandas==2.2.1
+matplotlib==3.8.0
+plotly==5.17.0
+gunicorn==21.2.0
