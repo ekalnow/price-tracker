@@ -29,13 +29,22 @@ Make sure you have a copy of this repository in your GitHub account.
 Add the following environment variables in the Vercel project settings:
 
 - `SECRET_KEY`: A secure random string for session encryption
-- `DATABASE_URL`: If using an external database, add the connection string here
+- `DATABASE_URL`: Connection string for your database (if using an external database)
+- `API_KEY`: A secure random string for authenticating API calls
 - `FLASK_ENV`: Set to `production`
-- `LOG_LEVEL`: Set to `INFO` or `WARNING` for production
+- `LOG_LEVEL`: Set to `INFO` (or `DEBUG` for troubleshooting)
 
-### 4. Deploy
+## Python 3.12 Compatibility
 
-Click "Deploy" and wait for the deployment to complete.
+This application has been optimized to work with Python 3.12 on Vercel. The following changes were made:
+
+1. **Removed aiohttp dependency**: The `aiohttp` package has compatibility issues with Python 3.12, so it has been removed.
+2. **Synchronous requests only**: All HTTP requests now use the synchronous `requests` library instead of `aiohttp`.
+3. **Simplified background tasks**: The background task system has been modified to work in a serverless environment.
+4. **Fixed werkzeug version**: Added a specific version of werkzeug (2.3.7) that is compatible with Flask-Login.
+5. **Added email_validator**: Added the email_validator package required by Flask-WTF for form validation.
+
+These changes ensure that the application can be deployed successfully on Vercel's serverless platform.
 
 ## Important Notes for Serverless Deployment
 
@@ -45,11 +54,23 @@ In a serverless environment like Vercel, you cannot reliably use a file-based SQ
 
 1. An in-memory SQLite database (for testing only, data will be lost between invocations)
 2. A managed database service like:
-   - [Supabase PostgreSQL](https://supabase.io/)
+   - [Supabase PostgreSQL](https://supabase.io/) (recommended)
    - [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
    - [AWS RDS](https://aws.amazon.com/rds/)
    
 Update your `DATABASE_URL` environment variable accordingly.
+
+#### Supabase Setup
+
+This application has been configured to work with Supabase PostgreSQL. To set up:
+
+1. Create a Supabase account and project at [https://supabase.com](https://supabase.com)
+2. Get your connection string from the Supabase dashboard
+3. Set the `DATABASE_URL` environment variable in Vercel to your Supabase PostgreSQL connection string:
+   ```
+   postgresql://postgres:[YOUR-PASSWORD]@db.xkzlhjsvptjqpouaqqtx.supabase.co:5432/postgres
+   ```
+4. Replace `[YOUR-PASSWORD]` with your actual database password
 
 ### Scheduled Tasks
 

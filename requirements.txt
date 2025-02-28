@@ -5,8 +5,8 @@ Flask-WTF==1.2.1
 SQLAlchemy==2.0.23
 requests==2.31.0
 beautifulsoup4==4.12.2
-aiohttp==3.8.6
-asyncio==3.4.3
+# aiohttp==3.8.6  # Removed due to Python 3.12 compatibility issues
+# asyncio==3.4.3  # Removed due to Python 3.12 compatibility issues
 pandas==2.2.1
 matplotlib==3.8.0
 plotly==5.17.0
@@ -14,3 +14,6 @@ APScheduler==3.10.4
 python-dotenv==1.0.0
 lxml==4.9.3
 gunicorn==21.2.0
+werkzeug==2.3.7
+email_validator==2.2.0
+psycopg2-binary==2.9.9

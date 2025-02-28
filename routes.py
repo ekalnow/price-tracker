@@ -1,7 +1,6 @@
 import os
 import csv
 import io
-import asyncio
 import json
 from datetime import datetime, timedelta
 from flask import render_template, redirect, url_for, flash, request, jsonify, send_file
@@ -12,7 +11,7 @@ import pandas as pd
 # from models import db, User, Product, PriceHistory, URL, PriceAlert
 # from forms import LoginForm, RegisterForm, URLForm, URLBatchForm, ProductFilterForm, PriceAlertForm, ScheduleForm
 # from extractors import get_product_info, detect_platform
-# from tasks import update_product_price, async_update_prices
+# from tasks import update_product_price
 
 def register_routes(app):
     """Register all routes with the Flask app"""
@@ -203,6 +202,7 @@ def register_routes(app):
         from forms import URLBatchForm
         from models import db, URL
         from extractors import detect_platform
+        from tasks import update_product_price
         
         form = URLBatchForm()
         if form.validate_on_submit():
@@ -237,11 +237,12 @@ def register_routes(app):
                 
             db.session.commit()
             
-            # Schedule an async task to update all newly added URLs
+            # Update prices synchronously for new URLs
             new_urls = URL.query.filter_by(user_id=current_user.id, last_checked=None).all()
             if new_urls:
                 url_ids = [url.id for url in new_urls]
-                asyncio.run(async_update_prices(app, url_ids))
+                for url_id in url_ids:
+                    update_product_price(url_id)
             
             flash(f'Added {added} URLs. {invalid} invalid, {duplicates} duplicates.', 'info')
             return redirect(url_for('urls'))
@@ -271,9 +272,9 @@ def register_routes(app):
     @login_required
     def update_prices():
         """Manually trigger price updates"""
-        from tasks import async_update_prices
+        from tasks import update_all_prices
         
-        asyncio.run(async_update_prices(app))
+        update_all_prices(app)
         
         flash('Price update initiated. This may take a few minutes.', 'info')
         return redirect(url_for('dashboard'))

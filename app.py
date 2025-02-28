@@ -20,7 +20,20 @@ logger = logging.getLogger(__name__)
 # Initialize Flask app
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-key-change-in-production')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URI', 'sqlite:///price_monitor.db')
+
+# Check if we're in a serverless environment
+is_serverless = os.environ.get('VERCEL_ENV') is not None or os.environ.get('SERVERLESS') is not None
+
+# Configure database URI based on environment
+if is_serverless:
+    # In serverless environment, use DATABASE_URL (for Supabase or other external DB)
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///:memory:')
+    logger.info(f"Running in serverless mode with database: {app.config['SQLALCHEMY_DATABASE_URI']}")
+else:
+    # In regular environment, use DATABASE_URI (local SQLite)
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URI', 'sqlite:///price_monitor.db')
+    logger.info(f"Running in regular mode with database: {app.config['SQLALCHEMY_DATABASE_URI']}")
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Import models and database (will be created in a separate file)
@@ -40,9 +53,6 @@ login_manager.login_view = 'login'
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
-
-# Check if we're in a serverless environment
-is_serverless = os.environ.get('VERCEL_ENV') is not None or os.environ.get('AWS_LAMBDA_FUNCTION_NAME') is not None
 
 # Initialize scheduler only if not in a serverless environment
 if not is_serverless:

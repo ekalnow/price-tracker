@@ -33,12 +33,27 @@ Click on **Environment Variables** and add the following:
 | Name | Value | Description |
 |------|-------|-------------|
 | `SECRET_KEY` | `[generate a random string]` | Used for session security |
-| `DATABASE_URL` | `[your database connection string]` | If using an external database |
+| `DATABASE_URL` | `postgresql://postgres:[YOUR-PASSWORD]@db.xkzlhjsvptjqpouaqqtx.supabase.co:5432/postgres` | Supabase PostgreSQL connection string |
+| `SUPABASE_URL` | `https://xkzlhjsvptjqpouaqqtx.supabase.co` | Supabase project URL |
+| `SUPABASE_KEY` | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhremxoanN2cHRqcXBvdWFxcXR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA3NDA3NzgsImV4cCI6MjA1NjMxNjc3OH0.HeDHVAHvclMxSO9HIlXdCCE1yHEk2G6wV7VIP3hvosk` | Supabase anon key |
 | `API_KEY` | `[generate a random API key]` | For authenticating scheduled API calls |
 | `FLASK_ENV` | `production` | Set to production mode |
 | `LOG_LEVEL` | `INFO` | Logging level |
 
-### 4. Deploy Your Project
+> **Important**: Replace `[YOUR-PASSWORD]` in the DATABASE_URL with your actual Supabase database password
+
+### 4. Initialize the Database
+
+After your first deployment, you need to initialize the database tables:
+
+1. Go to your Vercel project dashboard
+2. Navigate to **Deployments** > **[latest deployment]** > **Functions**
+3. Find the **api/init_db** function
+4. Click **Trigger** to run the database initialization script
+
+This will create all the necessary tables in your Supabase PostgreSQL database.
+
+### 5. Deploy Your Project
 
 Click **Deploy** and wait for the build to complete.
 
@@ -65,6 +80,18 @@ Vercel now offers [cron jobs](https://vercel.com/docs/cron-jobs) for scheduled f
 1. Create a file `api/cron.js` in your project
 2. Add your API call logic
 3. Configure the cron job in your Vercel dashboard
+
+## Important Notes About This Deployment
+
+### Synchronous Requests Only
+
+This deployment has been optimized to work with Python 3.12 on Vercel by:
+
+1. **Removing aiohttp dependency**: The `aiohttp` package has compatibility issues with Python 3.12, so it has been removed from the requirements.
+2. **Using synchronous requests only**: All HTTP requests are now handled synchronously using the `requests` library.
+3. **Simplified task processing**: The background task system has been simplified to work in a serverless environment.
+
+These changes ensure compatibility with Vercel's serverless environment while maintaining all the core functionality of the application.
 
 ## Database Considerations
 

@@ -2,8 +2,6 @@ import requests
 import json
 import re
 import logging
-import aiohttp
-import asyncio
 from bs4 import BeautifulSoup
 import random
 import time
@@ -322,74 +320,19 @@ class ZidExtractor(BaseExtractor):
             
         return product_data
 
-# Async versions of the extractors for batch processing
-async def fetch_url_async(url, session):
-    """Fetch URL content asynchronously"""
-    headers = {
-        'User-Agent': get_random_user_agent(),
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5',
-    }
-    
-    proxy = get_random_proxy()
-    
-    try:
-        async with session.get(
-            url, 
-            headers=headers, 
-            proxy=proxy,
-            timeout=aiohttp.ClientTimeout(total=10)
-        ) as response:
-            if response.status == 200:
-                return await response.text()
-            logger.warning(f"Request failed with status code {response.status}")
-    except Exception as e:
-        logger.error(f"Error fetching URL {url}: {e}")
-    
-    return None
-
-async def extract_product_data_async(url):
-    """Extract product data asynchronously"""
-    platform = detect_platform(url)
-    
-    if not platform:
-        logger.error(f"Unsupported platform for URL: {url}")
-        return None, url
-    
-    async with aiohttp.ClientSession() as session:
-        content = await fetch_url_async(url, session)
-        
-        if not content:
-            return None, url
-            
-        if platform == 'salla':
-            extractor = SallaExtractor()
-        elif platform == 'zid':
-            extractor = ZidExtractor()
-        else:
-            return None, url
-            
-        # We still use the synchronous methods for parsing since they're CPU-bound, not I/O bound
-        product_data = extractor.get_product_data(url)
-        if product_data:
-            product_data['url'] = url
-            product_data['platform'] = platform
-            
-        return product_data, url
-
-async def batch_extract_product_data(urls, concurrency=5):
-    """Extract product data for multiple URLs concurrently"""
-    # Limit concurrency to avoid overloading servers and getting blocked
-    semaphore = asyncio.Semaphore(concurrency)
-    
-    async def extract_with_semaphore(url):
-        async with semaphore:
-            return await extract_product_data_async(url)
-    
-    tasks = [extract_with_semaphore(url) for url in urls]
-    results = await asyncio.gather(*tasks)
-    
-    return {url: data for data, url in results if data}
+# Function to extract data for multiple URLs (synchronous version)
+def batch_extract_product_data(urls, concurrency=5):
+    """Extract product data for multiple URLs (synchronous version)"""
+    results = {}
+    for url in urls:
+        try:
+            results[url] = get_product_info(url)
+            # Add a small delay to avoid rate limiting
+            time.sleep(0.5)
+        except Exception as e:
+            logger.error(f"Error extracting data from {url}: {str(e)}")
+            results[url] = None
+    return results
 
 # Function to be used by external code
 def get_product_info(url):
