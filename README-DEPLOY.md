@@ -53,13 +53,52 @@ The following environment variables need to be set:
 
 ### Option 2: Render
 
+Render is a modern cloud platform that makes it easy to deploy your applications. It's a great option for Flask applications.
+
+#### Option 2A: Manual Deployment
+
 1. Create a Render account and connect your GitHub repository
-2. Create a new Web Service
-3. Select your repository and use the following settings:
+2. Create a new Web Service with these settings:
    - Build Command: `pip install -r requirements.txt`
    - Start Command: `gunicorn wsgi:app`
-4. Add environment variables in the Render dashboard
-5. Set up a Cron Job for regular price updates
+   - Environment Variables:
+     - `FLASK_ENV`: `production`
+     - `LOG_LEVEL`: `INFO`
+     - `SECRET_KEY`: (generate a secure random string)
+     - `API_KEY`: (generate a secure random string)
+     - `RENDER`: `true`
+3. Create a PostgreSQL database in Render
+   - Render will automatically set the `DATABASE_URL` environment variable
+4. After deployment, run the database initialization:
+   - Go to your Render dashboard
+   - Select your web service
+   - Go to the Shell tab
+   - Run: `python init_db.py`
+5. Set up a Cron Job for price updates:
+   - Create a new Cron Job in Render
+   - Build Command: `pip install -r requirements.txt`
+   - Start Command: `python -c "from tasks import update_all_prices; from app import app; update_all_prices(app)"`
+   - Schedule: `0 0 * * *` (daily at midnight)
+   - Add the same environment variables as your web service
+
+#### Option 2B: Blueprint Deployment (Recommended)
+
+This repository includes a `render.yaml` file that defines all the necessary services for Render's Blueprint deployments.
+
+1. Fork this repository to your GitHub account
+2. Go to the Render dashboard and click "New Blueprint Instance"
+3. Connect your GitHub account and select your forked repository
+4. Render will automatically create:
+   - A web service for the Flask application
+   - A PostgreSQL database
+   - A cron job for daily price updates
+5. After deployment, run the database initialization:
+   - Go to your Render dashboard
+   - Select your web service
+   - Go to the Shell tab
+   - Run: `python init_db.py`
+
+That's it! Your application will be fully deployed with a database and scheduled updates.
 
 ### Option 3: PythonAnywhere
 

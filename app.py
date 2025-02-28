@@ -21,18 +21,25 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-key-change-in-production')
 
-# Check if we're in a serverless environment
-is_serverless = os.environ.get('VERCEL_ENV') is not None or os.environ.get('SERVERLESS') is not None
+# Check if we're in a production environment (Render, Heroku, etc.)
+is_production = os.environ.get('RENDER') is not None or os.environ.get('HEROKU_APP_ID') is not None or os.environ.get('VERCEL_ENV') is not None or os.environ.get('SERVERLESS') is not None or os.environ.get('FLASK_ENV') == 'production'
 
 # Configure database URI based on environment
-if is_serverless:
-    # In serverless environment, use DATABASE_URL (for Supabase or other external DB)
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///:memory:')
-    logger.info(f"Running in serverless mode with database: {app.config['SQLALCHEMY_DATABASE_URI']}")
+if is_production:
+    # In production environment, use DATABASE_URL (for PostgreSQL or other external DB)
+    # Note: Render automatically sets DATABASE_URL
+    db_url = os.getenv('DATABASE_URL')
+    if db_url and db_url.startswith('postgres://'):
+        # Render uses postgres:// but SQLAlchemy requires postgresql://
+        db_url = db_url.replace('postgres://', 'postgresql://', 1)
+        app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+    else:
+        app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///:memory:')
+    logger.info(f"Running in production mode with database: {app.config['SQLALCHEMY_DATABASE_URI']}")
 else:
-    # In regular environment, use DATABASE_URI (local SQLite)
+    # In development environment, use DATABASE_URI (local SQLite)
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URI', 'sqlite:///price_monitor.db')
-    logger.info(f"Running in regular mode with database: {app.config['SQLALCHEMY_DATABASE_URI']}")
+    logger.info(f"Running in development mode with database: {app.config['SQLALCHEMY_DATABASE_URI']}")
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -54,8 +61,8 @@ login_manager.login_view = 'login'
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# Initialize scheduler only if not in a serverless environment
-if not is_serverless:
+# Initialize scheduler only if not in a production environment
+if not is_production:
     # Initialize scheduler
     scheduler = BackgroundScheduler()
     scheduler.start()
@@ -74,7 +81,7 @@ if not is_serverless:
     )
     logger.info(f"Scheduler initialized with interval of {interval_minutes} minutes")
 else:
-    logger.info("Running in serverless environment, scheduler disabled")
+    logger.info("Running in production environment, scheduler disabled")
     # Create a dummy scheduler attribute for API compatibility
     app.apscheduler = None
 

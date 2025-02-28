@@ -101,10 +101,12 @@ def update_all_prices(app):
         # Create a list of URL IDs
         url_ids = [url.id for url in valid_urls]
         
-        # Check if we're in a serverless environment
-        is_serverless = bool(app.config.get('SERVERLESS', False)) or \
-                        bool(app.config.get('VERCEL_ENV', False)) or \
-                        'VERCEL' in app.config
+        # Check if we're in a production environment
+        is_production = bool(app.config.get('SERVERLESS', False)) or \
+                      bool(app.config.get('VERCEL_ENV', False)) or \
+                      bool(app.config.get('RENDER', False)) or \
+                      bool(app.config.get('HEROKU_APP_ID', False)) or \
+                      app.config.get('FLASK_ENV') == 'production'
         
         # Process URLs synchronously
         logger.info("Processing URLs synchronously")
@@ -124,3 +126,38 @@ def update_all_prices(app):
     logger.info(f"Price update completed in {duration:.2f} seconds. Updated {updated_count} products.")
     
     return updated_count
+
+# For standalone execution (e.g., from a cron job)
+if __name__ == "__main__":
+    import os
+    import sys
+    from dotenv import load_dotenv
+    
+    # Load environment variables
+    load_dotenv()
+    
+    # Configure logging
+    logging_level = getattr(logging, os.getenv('LOG_LEVEL', 'INFO'))
+    logging.basicConfig(
+        level=logging_level,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+    
+    try:
+        # Try to import the serverless app first (for production environments)
+        try:
+            from app_serverless import app
+            logger.info("Using serverless app for scheduled task")
+        except ImportError:
+            # Fall back to regular app
+            from app import app
+            logger.info("Using regular app for scheduled task")
+        
+        # Run the update
+        updated_count = update_all_prices(app)
+        logger.info(f"Scheduled task completed: Updated {updated_count} products")
+        sys.exit(0)
+    except Exception as e:
+        logger.error(f"Error in scheduled task: {str(e)}")
+        logger.error(traceback.format_exc())
+        sys.exit(1)
